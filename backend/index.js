@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 mongoose.connect(config.connectionString);
 
 const User = require("./models/user.model");
+const Note  = require("./models/note.model");
 
 const express = require("express");
 const cors = require("cors");
@@ -106,6 +107,73 @@ app.post("/login", async(req,res) =>{
             error:true,
             message:"Invalid Credentials",
         });
+    }
+});
+
+app.post("/add-note", authenticateToken, async(req,res) => {
+    const {title,content,tags} = req.body;
+    const {user}=req.user;
+
+    if(!title){
+        return res.status(400).json({error:true, message:"Title is required"});
+    }
+
+    if(!content){
+        return res.status(400).json({error:true, message:"Content is required"});
+    }
+
+    try{
+        const note = new Note({
+            title,
+            content,
+            tags: tags || [],
+            userId: user._id,
+        });
+
+        await note.save();
+
+        return res.json({
+            error:false,
+            note,
+            message:"Note Added Successfully",
+        });
+    } catch (error) {
+        return res.status(500).json({
+            error:"true",
+            message: "Internal Server Error",
+        });
+    }
+});
+
+app.put("/edit-note/:noteId", authenticateToken, async(req,res) => {
+    const noteId = req.params.noteId;
+    const {title, content, tags, isPinned} = req.body;
+    const {user} = req.user;
+
+    if (!title && !content && !tags) {
+        return res.status(400).json({error:true,message:"No Changes Provided"});
+    }
+
+    try{
+        const note = await Note.findOne({_id: noteId, userId: user._id});
+
+        if (!note){
+            return res.status(404).json({error:true, message: "Note not found"});
+        }
+
+        if (title) note.title = title;
+        if (content) note.content = content;
+        if (tags) note.tags = tags;
+        if (isPinned) note.isPinned = isPinned;
+
+        await note.save();
+        return res.json({
+            error:false,
+            note,
+            message: "Note Updated Successfully",
+        });
+    } catch (error) {
+        return res.status(500).json({error:true, message:"Internal Server error",})
     }
 });
 
