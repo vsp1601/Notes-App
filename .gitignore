@@ -1,0 +1,12 @@
+backend/.env
+
+backend/config.json
+
+# 🔹 Ignore node_modules (Installed Dependencies)
+node_modules/
+
+# 🔹 Ignore logs and cache
+npm-debug.log
+yarn-error.log
+.DS_Store
+*.log
