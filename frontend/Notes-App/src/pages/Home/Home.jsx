@@ -7,8 +7,10 @@ import Modal from 'react-modal'
 import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../../utils/axiosInstance'
 import Toast from '../../components/ToastMessage/Toast'
-import AddNotesImg from '../../assets/images/add-notes.svg';
+import AddNotesImg from '../../assets/images/add-notes.svg'
 import EmptyCard from '../../components/EmptyCard/EmptyCard'
+import NoDataImg from '../../assets/images/no-notes.svg'
+
 
 const Home = () => {
 
@@ -27,6 +29,8 @@ const Home = () => {
   const [allNotes,setAllNotes] = useState([]);
 
   const [userInfo, setUserInfo] = useState(null);
+
+  const [isSearch, setIsSearch] = useState(false);
 
   const navigate = useNavigate();
 
@@ -89,6 +93,26 @@ const Home = () => {
     }
   }
 
+  const onSearchNote = async(query)=> {
+    try{
+      const response = await axiosInstance.get("/search-notes",{
+        params:{query},
+      });
+
+      if(response.data && response.data.notes){
+        setIsSearch(true);
+        setAllNotes(response.data.notes);
+      }
+    }catch(error){
+      console.log(error);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setIsSearch(false);
+    getAllNotes();
+  };
+
   useEffect(() => {
     getAllNotes();
     getUserInfo();
@@ -97,7 +121,7 @@ const Home = () => {
 
   return (
     <>
-      <Navbar userInfo={userInfo} />
+      <Navbar userInfo={userInfo} onSearchNote={onSearchNote} handleClearSearch={handleClearSearch}/>
 
       <div className='container mx-auto'>
         {allNotes.length > 0 ? (<div className='grid grid-cols-3 gap-4 mt-8'>
@@ -116,7 +140,11 @@ const Home = () => {
             onPinNote={()=>{}}
           />
           ))}
-        </div>) : (<EmptyCard imgSrc={AddNotesImg} message={'Start creating your first note'}/>)}
+        </div>) : (
+          <EmptyCard 
+            imgSrc={isSearch ? NoDataImg : AddNotesImg} 
+            message={isSearch ? 'No Notes Found' : 'Start creating your first note'}
+          />)}
       </div>
 
       <button className='w-16 h-16 flex items-center justify-center rounded-2xl bg-primary hover:bg-blue-600 absolute right-10 bottom-10'
